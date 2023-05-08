@@ -1,11 +1,17 @@
 # mgo
 
 Build multiple `GOAMD64` variants and bundle them in a launcher capable to pick the
-appropriate variant.
+appropriate variant at runtime.
 
 This is mostly useful if you want to provide `GOAMD64` variants because of the extra
-runtime performance this yields, but you have no control over which processor the
-executable will be run on.
+runtime performance this yields, but you have no control over which processor 
+microarchitecture the executable will be run on.
+
+## Install
+
+```
+go install github.com/CAFxX/mgo@latest
+```
 
 ## Usage
 
