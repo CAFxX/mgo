@@ -21,4 +21,4 @@ When building your code just replace `go build [...]` with `mgo [...]`.
 
 - The resulting executable will be over 4 times as large as a normal build output.
 - Startup of the resulting executable is going to be a bit slower.
-- Currently only GOOS=linux and GOARCH=amd64 are supported. 
+- Currently only `GOOS=linux` and `GOARCH=amd64` are supported. 
