@@ -123,6 +123,7 @@ import (
 	"os"
 	"syscall"
 	"unsafe"
+	"runtime"
 
 	cpuid "github.com/klauspost/cpuid/v2"
 )
@@ -199,7 +200,18 @@ func execveAt(fd uintptr) (err error) {
     if err != nil {
         return err
     }
-    ret, _, errno := syscall.Syscall6(322, fd, uintptr(unsafe.Pointer(s)), 0, 0, 0x1000, 0)
+	argv, err := syscall.SlicePtrFromStrings(os.Args)
+	if err != nil {
+		return err
+	}
+	envp, err := syscall.SlicePtrFromStrings(os.Environ())
+	if err != nil {
+		return err
+	}
+    ret, _, errno := syscall.Syscall6(322, fd, uintptr(unsafe.Pointer(s)), uintptr(unsafe.Pointer(&argv[0])), uintptr(unsafe.Pointer(&envp[0])), 0, 0)
+	runtime.KeepAlive(s)
+	runtime.KeepAlive(argv)
+	runtime.KeepAlive(envp)
     if int(ret) == -1 {
         return errno
     }
