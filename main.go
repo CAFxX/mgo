@@ -14,12 +14,20 @@ import (
 )
 
 func main() {
-	if !((os.Getenv("GOOS") == "" && runtime.GOOS == "linux") || os.Getenv("GOOS") == "linux") {
-		fmt.Printf("GOOS=%q is not supported\n", os.Getenv("GOOS"))
+	goos := os.Getenv("GOOS")
+	if goos == "" {
+		goos = runtime.GOOS
+	}
+	if goos != "linux" {
+		fmt.Printf("GOOS=%q is not supported\n", goos)
 		return
 	}
-	if !((os.Getenv("GOARCH") == "" && runtime.GOARCH == "amd64") || os.Getenv("GOARCH") == "amd64") {
-		fmt.Printf("GOARCH=%q is not supported\n", os.Getenv("GOARCH"))
+	goarch := os.Getenv("GOARCH")
+	if goarch == "" {
+		goarch = runtime.GOARCH
+	}
+	if goarch != "amd64" {
+		fmt.Printf("GOARCH=%q is not supported\n", goarch)
 		return
 	}
 
