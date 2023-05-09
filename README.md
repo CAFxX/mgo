@@ -1,7 +1,8 @@
 # mgo
 
-Build multiple `GOAMD64` variants and bundle them in a launcher capable of picking at
-runtime the most appropriate variant for the processor in use.
+Build your code for multiple [`GOAMD64` variants][1] and bundle all of them in a 
+launcher capable of picking at runtime the most appropriate variant for the
+processor in use.
 
 This is mostly useful if you want to provide `GOAMD64` variants because of the extra
 runtime performance this yields, but you have no control over which processor 
@@ -29,7 +30,7 @@ At runtime it is possible to override which variant is used by specifying in the
 - The resulting executable will be over 4 times as large as a normal build output
 - Startup of the resulting executable is going to be a bit slower (tens of milliseconds)
 - Currently only `GOOS=linux` and `GOARCH=amd64` are supported, and only in
-  `buildmode`s that produce executables (not archives, plugins, or libraries).
+  `buildmode`s that produce executables (not archives, plugins, or libraries)
 
 ## Quick sanity check
 
@@ -41,3 +42,7 @@ echo stage3 && ./vmgo2 -o vmgo3 && sha1sum vmgo3
 ```
 
 This command should succeed and produce three identical hashes.
+
+
+
+[1]: https://github.com/golang/go/wiki/MinimumRequirements#amd64
