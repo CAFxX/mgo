@@ -56,50 +56,44 @@ func main() {
 		v = "mgo.v4"
 	}
 
-	err := embeddedExec(f, v)
-	if err != nil {
-		panic(err)
-	}
+	embeddedExec(f, v)
+
 	panic("unreachable")
 }
 
-func embeddedExec(f embed.FS, s string) error {
+func embeddedExec(f embed.FS, s string) {
 	buf, err := f.ReadFile(s)
 	if err != nil {
-		return fmt.Errorf("reading embedded file: %w", err)
+		panicf("reading embedded file: %w", err)
 	}
 
 	fd, err := unix.MemfdCreate("", unix.MFD_CLOEXEC)
 	if err != nil {
-		return fmt.Errorf("creating memfd: %w", err)
+		panicf("creating memfd: %w", err)
 	}
 
 	_, err = syscall.Write(fd, buf)
 	if err != nil {
-		return fmt.Errorf("writing to memfd: %w", err)
+		panicf("writing to memfd: %w", err)
 	}
 
-	err = execveAt(fd)
-	if err != nil {
-		return fmt.Errorf("executing: %w", err)
-	}
+	execveAt(fd)
 
-	// unreachable
-	return fmt.Errorf("embeddedExec: unreachable")
+	panic("unreachable")
 }
 
-func execveAt(fd int) (err error) {
+func execveAt(fd int) {
 	s, err := syscall.BytePtrFromString("")
 	if err != nil {
-		return err
+		panicf("converting path: %w", err)
 	}
 	argv, err := syscall.SlicePtrFromStrings(os.Args)
 	if err != nil {
-		return err
+		panicf("converting args: %w", err)
 	}
 	envp, err := syscall.SlicePtrFromStrings(os.Environ())
 	if err != nil {
-		return err
+		panicf("converting environ: %w", err)
 	}
 
 	ret, _, errno := syscall.Syscall6(
@@ -115,9 +109,12 @@ func execveAt(fd int) (err error) {
 	runtime.KeepAlive(argv)
 	runtime.KeepAlive(envp)
 	if int(ret) == -1 {
-		return fmt.Errorf("execveat: %w", errno)
+		panicf("execveat: %w", errno)
 	}
 
-	// unreachable
-	return fmt.Errorf("execveAt: unreachable")
+	panic("unreachable")
+}
+
+func panicf(format string, args ...any) {
+	panic(fmt.Errorf(format, args...))
 }
