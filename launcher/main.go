@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"runtime/debug"
 	"syscall"
 	"unsafe"
 
@@ -25,11 +26,15 @@ import (
 //go:embed mgo.v1 mgo.v2 mgo.v3 mgo.v4
 var f embed.FS
 
+func init() {
+	runtime.GOMAXPROCS(1)
+	debug.SetGCPercent(-1)
+}
+
 func main() {
 	level := cpuid.CPU.X64Level()
 
 	switch os.Getenv("GOAMD64") {
-	default:
 	case "v1":
 		level = 1
 	case "v2":
@@ -40,18 +45,17 @@ func main() {
 		level = 4
 	}
 
-	var err error
+	v := "mgo.v1"
 	switch level {
-	default:
-		err = embeddedExec(f, "mgo.v1")
 	case 2:
-		err = embeddedExec(f, "mgo.v2")
+		v = "mgo.v2"
 	case 3:
-		err = embeddedExec(f, "mgo.v3")
+		v = "mgo.v3"
 	case 4:
-		err = embeddedExec(f, "mgo.v4")
+		v = "mgo.v4"
 	}
 
+	err := embeddedExec(f, v)
 	if err != nil {
 		panic(err)
 	}
