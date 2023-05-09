@@ -8,9 +8,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 
 	_ "github.com/klauspost/cpuid/v2"
+	"golang.org/x/mod/semver"
 )
 
 func main() {
@@ -22,6 +24,7 @@ func main() {
 		fmt.Printf("GOOS=%q is not supported\n", goos)
 		return
 	}
+
 	goarch := os.Getenv("GOARCH")
 	if goarch == "" {
 		goarch = runtime.GOARCH
@@ -30,8 +33,26 @@ func main() {
 		fmt.Printf("GOARCH=%q is not supported\n", goarch)
 		return
 	}
+
 	if goamd64 := os.Getenv("GOAMD64"); goamd64 != "" {
 		fmt.Printf("GOAMD64 must not be set (currently %q)\n", goamd64)
+		return
+	}
+
+	cmd := exec.Command("go")
+	cmd.Args = []string{"go", "version"}
+	buf, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("fetching go version: %v\n", err)
+		return
+	}
+	m := regexp.MustCompile(`^go version go([0-9]+\.[0-9]+(\.[0-9]+)?)`).FindSubmatch(buf)
+	if m == nil {
+		fmt.Printf("parsing go version: malformed: %q\n", string(buf))
+		return
+	}
+	if semver.Compare("v"+string(m[1]), "v1.18") < 0 {
+		fmt.Printf("installed go version too old: %q\n", string(m[1]))
 		return
 	}
 
@@ -100,7 +121,7 @@ func main() {
 		}
 	}
 
-	cmd := exec.Command("go")
+	cmd = exec.Command("go")
 	cmd.Args = []string{"go", "build", "-mod=vendor", "-o", filepath.Join(cwd, *o), "-trimpath", filepath.Join(tmpdir, "main.go")}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout

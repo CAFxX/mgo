@@ -25,6 +25,7 @@ At runtime it is possible to override which variant is used by specifying in the
 
 ## Notes
 
+- `mgo` requires Go >= 1.18 (older versions do not support `GOAMD64`)
 - The resulting executable will be over 4 times as large as a normal build output
 - Startup of the resulting executable is going to be a bit slower
 - Currently only `GOOS=linux` and `GOARCH=amd64` are supported, and only in
