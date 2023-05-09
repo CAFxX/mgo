@@ -17,7 +17,11 @@ go install github.com/CAFxX/mgo@latest
 
 When building your code just replace `go build [...]` with `mgo [...]`: the resulting
 executable will contain 4 variants, each optimized for one of `GOAMD64=v1`, `GOAMD64=v2`,
-`GOAMD64=v3`, `GOAMD64=v4`.
+`GOAMD64=v3` and `GOAMD64=v4`, and a launcher that will pick the appropriate one at
+runtime.
+
+At runtime it is possible to override which variant is used by specifying in the
+`GOAMD64` environment variable one of the values `v1`, `v2`, `v3`, or `v4`.
 
 ## Notes
 
