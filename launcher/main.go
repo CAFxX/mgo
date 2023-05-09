@@ -62,11 +62,13 @@ func main() {
 }
 
 func embeddedExec(f embed.FS, s string) {
+	// FIXME: avoid alloc+copy when reading from embed.FS
 	buf, err := f.ReadFile(s)
 	if err != nil {
 		panicf("reading embedded file: %w", err)
 	}
 
+	// TODO: create fd pointing directly to the data embedded?
 	fd, err := unix.MemfdCreate("", unix.MFD_CLOEXEC)
 	if err != nil {
 		panicf("creating memfd: %w", err)
