@@ -72,6 +72,14 @@ func embeddedExec(f embed.FS, s string) {
 		panicf("creating memfd: %w", err)
 	}
 
+	if runtime.GOOS != "linux" {
+		// on the BSDs we must allocate the space before writing
+		err = unix.Ftruncate(fd, int64(len(buf)))
+		if err != nil {
+			panicf("resizing memfd: %w", err)
+		}
+	}
+
 	_, err = syscall.Write(fd, buf)
 	if err != nil {
 		panicf("writing to memfd: %w", err)
