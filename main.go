@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"embed"
 	"flag"
 	"fmt"
@@ -11,7 +12,6 @@ import (
 	"regexp"
 	"runtime"
 
-	_ "github.com/klauspost/cpuid/v2"
 	"golang.org/x/mod/semver"
 )
 
@@ -107,9 +107,13 @@ func main() {
 		return
 	}
 
+	hashes := map[[32]byte]string{}
+	vmap := map[string]string{}
 	for _, v := range []string{"v1", "v2", "v3", "v4"} {
+		exe := filepath.Join(tmpdir, "mgo."+v)
+
 		cmd := exec.Command("go")
-		cmd.Args = append([]string{"go", "build", "-o", filepath.Join(tmpdir, "mgo."+v)}, flag.Args()...)
+		cmd.Args = append([]string{"go", "build", "-o", exe}, flag.Args()...)
 		cmd.Env = append(os.Environ(), "GOAMD64="+v)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
@@ -118,6 +122,19 @@ func main() {
 		if err != nil {
 			fmt.Printf("building variant %q: %v\n", v, err)
 			return
+		}
+
+		buf, err := os.ReadFile(exe)
+		if err != nil {
+			fmt.Printf("reading variant executable %q: %v", exe, err)
+			return
+		}
+		h := sha256.Sum256(buf)
+		if pv, ok := hashes[h]; ok {
+			vmap[v] = pv
+		} else {
+			vmap[v] = v
+			hashes[h] = v
 		}
 	}
 
