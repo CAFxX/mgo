@@ -3,7 +3,7 @@
 // that is embedded in the binary.
 //
 // This code is not compiled in this directory: instead it is copied (together
-// with the vendor directory) into the temp directory where the compiled 
+// with the vendor directory) into the temp directory where the compiled
 // GOAMD64 variants are outputted, and it is then compiled from there.
 
 //go:build linux && amd64
@@ -19,6 +19,7 @@ import (
 	"unsafe"
 
 	cpuid "github.com/klauspost/cpuid/v2"
+	"golang.org/x/sys/unix"
 )
 
 //go:embed mgo.v1 mgo.v2 mgo.v3 mgo.v4
@@ -47,12 +48,12 @@ func embeddedExec(f embed.FS, s string) error {
 		return fmt.Errorf("reading embedded file: %w", err)
 	}
 
-	fd, err := memfdCreate("/" + os.Args[0])
+	fd, err := unix.MemfdCreate("", unix.MFD_CLOEXEC)
 	if err != nil {
 		return fmt.Errorf("creating memfd: %w", err)
 	}
 
-	err = copyToMem(fd, buf)
+	_, err = syscall.Write(fd, buf)
 	if err != nil {
 		return fmt.Errorf("writing to memfd: %w", err)
 	}
@@ -66,29 +67,7 @@ func embeddedExec(f embed.FS, s string) error {
 	return fmt.Errorf("embeddedExec: unreachable")
 }
 
-func memfdCreate(path string) (r1 uintptr, err error) {
-	s, err := syscall.BytePtrFromString(path)
-	if err != nil {
-		return 0, err
-	}
-
-	r1, _, errno := syscall.Syscall(319, uintptr(unsafe.Pointer(s)), 0, 0)
-	if int(r1) == -1 {
-		return r1, errno
-	}
-
-	return r1, nil
-}
-
-func copyToMem(fd uintptr, buf []byte) (err error) {
-	_, err = syscall.Write(int(fd), buf)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func execveAt(fd uintptr) (err error) {
+func execveAt(fd int) (err error) {
 	s, err := syscall.BytePtrFromString("")
 	if err != nil {
 		return err
@@ -101,13 +80,23 @@ func execveAt(fd uintptr) (err error) {
 	if err != nil {
 		return err
 	}
-	ret, _, errno := syscall.Syscall6(322, fd, uintptr(unsafe.Pointer(s)), uintptr(unsafe.Pointer(&argv[0])), uintptr(unsafe.Pointer(&envp[0])), 0, 0)
+
+	ret, _, errno := syscall.Syscall6(
+		unix.SYS_EXECVEAT,
+		uintptr(fd),
+		uintptr(unsafe.Pointer(s)),
+		uintptr(unsafe.Pointer(&argv[0])),
+		uintptr(unsafe.Pointer(&envp[0])),
+		unix.AT_EMPTY_PATH,
+		0, /* unused */
+	)
 	runtime.KeepAlive(s)
 	runtime.KeepAlive(argv)
 	runtime.KeepAlive(envp)
 	if int(ret) == -1 {
-		return errno
+		return fmt.Errorf("execveat: %w", errno)
 	}
+
 	// unreachable
 	return fmt.Errorf("execveAt: unreachable")
 }
