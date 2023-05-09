@@ -15,10 +15,24 @@ go install github.com/CAFxX/mgo@latest
 
 ## Usage
 
-When building your code just replace `go build [...]` with `mgo [...]`.
+When building your code just replace `go build [...]` with `mgo [...]`: the resulting
+executable will contain 4 variants, each optimized for one of `GOAMD64=v1`, `GOAMD64=v2`,
+`GOAMD64=v3`, `GOAMD64=v4`.
 
 ## Notes
 
-- The resulting executable will be over 4 times as large as a normal build output.
-- Startup of the resulting executable is going to be a bit slower.
-- Currently only `GOOS=linux` and `GOARCH=amd64` are supported. 
+- The resulting executable will be over 4 times as large as a normal build output
+- Startup of the resulting executable is going to be a bit slower
+- Currently only `GOOS=linux` and `GOARCH=amd64` are supported, and only in
+  `buildmode`s that produce executables (not archives, plugins, or libraries).
+
+## Quick sanity check
+
+```
+echo stage0 && go build &&\
+echo stage1 && ./mgo -o vmgo && sha1sum vmgo &&\
+echo stage2 && ./vmgo -o vmgo2 && sha1sum vmgo2 &&\
+echo stage3 && ./vmgo2 -o vmgo3 && sha1sum vmgo3
+```
+
+This command should succeed and produce three identical hashes.
