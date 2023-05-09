@@ -40,8 +40,6 @@ func main() {
 	o := flag.String("o", filepath.Base(cwd), "output file")
 	flag.Parse()
 
-	var variants = []string{"v1", "v2", "v3", "v4"}
-
 	tmpdir, err := os.MkdirTemp("", "mgo")
 	if err != nil {
 		fmt.Printf("creating temp dir: %v\n", err)
@@ -84,7 +82,7 @@ func main() {
 		return
 	}
 
-	for _, v := range variants {
+	for _, v := range []string{"v1", "v2", "v3", "v4"} {
 		cmd := exec.Command("go")
 		cmd.Args = append([]string{"go", "build", "-o", filepath.Join(tmpdir, "mgo."+v)}, flag.Args()...)
 		cmd.Env = append(os.Environ(), "GOAMD64="+v)
@@ -99,7 +97,7 @@ func main() {
 	}
 
 	cmd := exec.Command("go")
-	cmd.Args = append([]string{"go", "build", "-mod=vendor", "-o", filepath.Join(cwd, *o)}, "-trimpath", filepath.Join(tmpdir, "main.go"))
+	cmd.Args = []string{"go", "build", "-mod=vendor", "-o", filepath.Join(cwd, *o), "-trimpath", filepath.Join(tmpdir, "main.go")}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
