@@ -1,7 +1,7 @@
 # mgo
 
-Build multiple `GOAMD64` variants and bundle them in a launcher capable to pick the
-appropriate variant at runtime.
+Build multiple `GOAMD64` variants and bundle them in a launcher capable of picking at
+runtime the most appropriate variant for the processor in use.
 
 This is mostly useful if you want to provide `GOAMD64` variants because of the extra
 runtime performance this yields, but you have no control over which processor 
