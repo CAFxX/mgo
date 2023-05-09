@@ -26,8 +26,22 @@ import (
 var f embed.FS
 
 func main() {
+	level := cpuid.CPU.X64Level()
+
+	switch os.Getenv("GOAMD64") {
+	default:
+	case "v1":
+		level = 1
+	case "v2":
+		level = 2
+	case "v3":
+		level = 3
+	case "v4":
+		level = 4
+	}
+
 	var err error
-	switch cpuid.CPU.X64Level() {
+	switch level {
 	default:
 		err = embeddedExec(f, "mgo.v1")
 	case 2:
@@ -37,6 +51,7 @@ func main() {
 	case 4:
 		err = embeddedExec(f, "mgo.v4")
 	}
+
 	if err != nil {
 		panic(err)
 	}
