@@ -32,8 +32,7 @@ func init() {
 }
 
 func main() {
-	level := cpuid.CPU.X64Level()
-
+	var level int
 	switch os.Getenv("GOAMD64") {
 	case "v1":
 		level = 1
@@ -43,6 +42,8 @@ func main() {
 		level = 3
 	case "v4":
 		level = 4
+	default:
+		level = cpuid.CPU.X64Level()
 	}
 
 	v := "mgo.v1"
@@ -59,6 +60,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	panic("unreachable")
 }
 
 func embeddedExec(f embed.FS, s string) error {
