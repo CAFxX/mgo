@@ -30,6 +30,10 @@ func main() {
 		fmt.Printf("GOARCH=%q is not supported\n", goarch)
 		return
 	}
+	if goamd64 := os.Getenv("GOAMD64"); goamd64 != "" {
+		fmt.Printf("GOAMD64 must not be set (currently %q)\n", goamd64)
+		return
+	}
 
 	cwd, err := os.Getwd()
 	if err != nil {
