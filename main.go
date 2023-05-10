@@ -67,8 +67,8 @@ func main() {
 		if os.Args[i] == "-o" && len(os.Args) > i+1 {
 			o = os.Args[i+1]
 			i++
-		} else if strings.HasPrefix(os.Args[i], "-o=") {
-			o = strings.TrimPrefix(os.Args[i], "-o=")
+		} else if a, ok := strings.CutPrefix(os.Args[i], "-o="); ok {
+			o = a
 		} else {
 			args = append(args, os.Args[i])
 		}
@@ -132,7 +132,7 @@ func main() {
 	}
 
 	cmd = exec.Command("go")
-	cmd.Args = []string{"go", "build", "-C", tmpdir, "-mod", "vendor", "-o", filepath.Join(cwd, o), "-trimpath", "./launcher"}
+	cmd.Args = []string{"go", "build", "-C", tmpdir, "-o", filepath.Join(cwd, o), "-trimpath", "./launcher"}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
