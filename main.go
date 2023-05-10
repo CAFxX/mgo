@@ -68,8 +68,8 @@ func main() {
 		if os.Args[i] == "-o" && len(os.Args) > i+1 {
 			o = os.Args[i+1]
 			i++
-		} else if a, found := strings.CutPrefix(os.Args[i], "-o="); found {
-			o = a
+		} else if strings.HasPrefix(os.Args[i], "-o=") {
+			o = strings.TrimPrefix(os.Args[i], "-o=")
 		} else {
 			args = append(args, os.Args[i])
 		}
