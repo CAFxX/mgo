@@ -2,8 +2,9 @@ module github.com/CAFxX/mgo
 
 go 1.20
 
+replace github.com/CAFxX/mgo/launcher => ./launcher
+
 require (
-	github.com/klauspost/cpuid/v2 v2.2.4
+	github.com/CAFxX/mgo/launcher v0.0.0-00010101000000-000000000000
 	golang.org/x/mod v0.10.0
-	golang.org/x/sys v0.0.0-20220704084225-05e143d24a9e
 )

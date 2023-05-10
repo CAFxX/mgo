@@ -1,7 +1,6 @@
 package main
 
 import (
-	"embed"
 	"fmt"
 	"io/fs"
 	"os"
@@ -11,7 +10,7 @@ import (
 	"runtime"
 	"strings"
 
-	_ "github.com/klauspost/cpuid/v2"
+	"github.com/CAFxX/mgo/launcher"
 	"golang.org/x/mod/semver"
 )
 
@@ -82,19 +81,20 @@ func main() {
 	}
 	defer os.RemoveAll(tmpdir)
 
-	err = os.WriteFile(filepath.Join(tmpdir, "main.go"), []byte(launcher), 0600)
-	if err != nil {
-		fmt.Printf("writing launcher: %v\n", err)
-		os.Exit(2)
-	}
-
-	err = fs.WalkDir(vendor, ".", func(path string, d fs.DirEntry, err error) error {
-		dpath := filepath.Join(tmpdir, path)
+	err = fs.WalkDir(launcher.Source, ".", func(path string, d fs.DirEntry, err error) error {
+		var dpath string
+		if a, ok := strings.CutSuffix(path, ".go.mod"); ok {
+			dpath = a + "go.mod"
+		} else if a, ok := strings.CutSuffix(path, ".go.sum"); ok {
+			dpath = a + "go.sum"
+		} else {
+			dpath = filepath.Join(tmpdir, path)
+		}
 		switch {
 		case err != nil:
 			return err
 		case d.Type().IsRegular():
-			buf, err := fs.ReadFile(vendor, path)
+			buf, err := fs.ReadFile(launcher.Source, path)
 			if err != nil {
 				return fmt.Errorf("read file %q: %w", path, err)
 			}
@@ -119,7 +119,7 @@ func main() {
 
 	for _, v := range []string{"v1", "v2", "v3", "v4"} {
 		cmd := exec.Command("go")
-		cmd.Args = append([]string{"go", "build", "-o", filepath.Join(tmpdir, "mgo."+v)}, args...)
+		cmd.Args = append([]string{"go", "build", "-o", filepath.Join(tmpdir, "cmd", "mgo."+v)}, args...)
 		cmd.Env = append(os.Environ(), "GOAMD64="+v)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
@@ -132,7 +132,7 @@ func main() {
 	}
 
 	cmd = exec.Command("go")
-	cmd.Args = []string{"go", "build", "-mod=vendor", "-o", filepath.Join(cwd, o), "-trimpath", filepath.Join(tmpdir, "main.go")}
+	cmd.Args = []string{"go", "build", "-C", tmpdir, "-mod", "vendor", "-o", filepath.Join(cwd, o), "-trimpath", "./cmd"}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -142,9 +142,3 @@ func main() {
 		os.Exit(2)
 	}
 }
-
-//go:embed vendor
-var vendor embed.FS
-
-//go:embed launcher/main.go
-var launcher []byte
