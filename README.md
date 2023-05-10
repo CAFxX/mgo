@@ -35,10 +35,11 @@ At runtime it is possible to override which variant is used by specifying in the
 ## Quick sanity check
 
 ```
-echo stage0 && go build &&\
-echo stage1 && ./mgo -o vmgo && sha1sum vmgo &&\
-echo stage2 && ./vmgo -o vmgo2 && sha1sum vmgo2 &&\
-echo stage3 && ./vmgo2 -o vmgo3 && sha1sum vmgo3
+rm -f *mgo* && \
+echo stage0 && go build && \
+echo stage1 && ./mgo -o mgo1 && sha1sum mgo1 && \
+echo stage2 && ./mgo1 -o mgo2 && sha1sum mgo2 && \
+echo stage3 && ./mgo2 -o mgo3 && sha1sum mgo3
 ```
 
 This command should succeed and produce three identical hashes.
