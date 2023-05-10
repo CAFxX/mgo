@@ -35,7 +35,7 @@ At runtime it is possible to override which variant is used by specifying in the
 ## Quick sanity check
 
 ```
-rm -f *mgo* && \
+rm -f mgo* && \
 echo stage0 && go build && \
 echo stage1 && ./mgo -o mgo1 && sha1sum mgo1 && \
 echo stage2 && ./mgo1 -o mgo2 && sha1sum mgo2 && \
