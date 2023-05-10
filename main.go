@@ -85,14 +85,7 @@ func main() {
 	defer os.RemoveAll(tmpdir)
 
 	err = fs.WalkDir(launcherSource, ".", func(path string, d fs.DirEntry, err error) error {
-		var dpath string
-		if a, ok := strings.CutSuffix(path, ".go.mod"); ok {
-			dpath = a + "go.mod"
-		} else if a, ok := strings.CutSuffix(path, ".go.sum"); ok {
-			dpath = a + "go.sum"
-		} else {
-			dpath = filepath.Join(tmpdir, path)
-		}
+		dpath := filepath.Join(tmpdir, path)
 		switch {
 		case err != nil:
 			return err
@@ -146,5 +139,5 @@ func main() {
 	}
 }
 
-//go:embed go.mod go.sum launcher vendor
+//go:embed go.mod go.sum launcher
 var launcherSource embed.FS
