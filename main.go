@@ -120,7 +120,6 @@ func main() {
 	for _, v := range []string{"v1", "v2", "v3", "v4"} {
 		cmd := exec.Command("go")
 		cmd.Args = append([]string{"go", "build", "-o", filepath.Join(tmpdir, "mgo."+v)}, args...)
-		fmt.Println(cmd.Args)
 		cmd.Env = append(os.Environ(), "GOAMD64="+v)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
