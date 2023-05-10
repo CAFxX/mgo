@@ -2,7 +2,6 @@ package main
 
 import (
 	"embed"
-	"flag"
 	"fmt"
 	"io/fs"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 
 	_ "github.com/klauspost/cpuid/v2"
 	"golang.org/x/mod/semver"
@@ -62,8 +62,18 @@ func main() {
 		return
 	}
 
-	o := flag.String("o", filepath.Base(cwd), "output file")
-	flag.Parse()
+	o := cwd
+	var args []string
+	for i := 1; i < len(os.Args); i++ {
+		if os.Args[i] == "-o" && len(os.Args) > i+1 {
+			o = os.Args[i+1]
+			i++
+		} else if a, found := strings.CutPrefix(os.Args[i], "-o="); found {
+			o = a
+		} else {
+			args = append(args, os.Args[i])
+		}
+	}
 
 	tmpdir, err := os.MkdirTemp("", "mgo")
 	if err != nil {
@@ -109,7 +119,8 @@ func main() {
 
 	for _, v := range []string{"v1", "v2", "v3", "v4"} {
 		cmd := exec.Command("go")
-		cmd.Args = append([]string{"go", "build", "-o", filepath.Join(tmpdir, "mgo."+v)}, flag.Args()...)
+		cmd.Args = append(append([]string{"go", "build"}, args...), "-o", filepath.Join(tmpdir, "mgo."+v))
+		fmt.Println(cmd.Args)
 		cmd.Env = append(os.Environ(), "GOAMD64="+v)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
@@ -122,7 +133,7 @@ func main() {
 	}
 
 	cmd = exec.Command("go")
-	cmd.Args = []string{"go", "build", "-mod=vendor", "-o", filepath.Join(cwd, *o), "-trimpath", filepath.Join(tmpdir, "main.go")}
+	cmd.Args = []string{"go", "build", "-mod=vendor", "-o", filepath.Join(cwd, o), "-trimpath", filepath.Join(tmpdir, "main.go")}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
