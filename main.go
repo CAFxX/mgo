@@ -61,7 +61,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	o := cwd
+	o := filepath.Base(cwd)
 	var args []string
 	for i := 1; i < len(os.Args); i++ {
 		if os.Args[i] == "-o" && len(os.Args) > i+1 {
@@ -72,6 +72,9 @@ func main() {
 		} else {
 			args = append(args, os.Args[i])
 		}
+	}
+	if !filepath.IsAbs(o) {
+		o = filepath.Join(cwd, o)
 	}
 
 	tmpdir, err := os.MkdirTemp("", "mgo")
@@ -132,7 +135,7 @@ func main() {
 	}
 
 	cmd = exec.Command("go")
-	cmd.Args = []string{"go", "build", "-C", tmpdir, "-o", filepath.Join(cwd, o), "-trimpath", "./launcher"}
+	cmd.Args = []string{"go", "build", "-C", tmpdir, "-o", o, "-trimpath", "./launcher"}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
