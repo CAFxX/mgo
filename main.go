@@ -22,7 +22,7 @@ func main() {
 	}
 	if goos != "linux" {
 		fmt.Printf("GOOS=%q is not supported\n", goos)
-		return
+		os.Exit(1)
 	}
 
 	goarch := os.Getenv("GOARCH")
@@ -31,12 +31,12 @@ func main() {
 	}
 	if goarch != "amd64" {
 		fmt.Printf("GOARCH=%q is not supported\n", goarch)
-		return
+		os.Exit(1)
 	}
 
 	if goamd64 := os.Getenv("GOAMD64"); goamd64 != "" {
 		fmt.Printf("GOAMD64 must not be set (currently %q)\n", goamd64)
-		return
+		os.Exit(1)
 	}
 
 	cmd := exec.Command("go")
@@ -44,22 +44,22 @@ func main() {
 	buf, err := cmd.Output()
 	if err != nil {
 		fmt.Printf("fetching go version: %v\n", err)
-		return
+		os.Exit(2)
 	}
 	m := regexp.MustCompile(`^go version go([0-9]+\.[0-9]+(\.[0-9]+)?)`).FindSubmatch(buf)
 	if m == nil {
 		fmt.Printf("parsing go version: malformed: %q\n", string(buf))
-		return
+		os.Exit(2)
 	}
 	if semver.Compare("v"+string(m[1]), "v1.18") < 0 {
 		fmt.Printf("installed go version too old: %q\n", string(m[1]))
-		return
+		os.Exit(2)
 	}
 
 	cwd, err := os.Getwd()
 	if err != nil {
 		fmt.Printf("getting cwd: %v\n", err)
-		return
+		os.Exit(2)
 	}
 
 	o := cwd
@@ -78,14 +78,14 @@ func main() {
 	tmpdir, err := os.MkdirTemp("", "mgo")
 	if err != nil {
 		fmt.Printf("creating temp dir: %v\n", err)
-		return
+		os.Exit(2)
 	}
 	defer os.RemoveAll(tmpdir)
 
 	err = os.WriteFile(filepath.Join(tmpdir, "main.go"), []byte(launcher), 0600)
 	if err != nil {
 		fmt.Printf("writing launcher: %v\n", err)
-		return
+		os.Exit(2)
 	}
 
 	err = fs.WalkDir(vendor, ".", func(path string, d fs.DirEntry, err error) error {
@@ -114,7 +114,7 @@ func main() {
 	})
 	if err != nil {
 		fmt.Printf("copying vendored dependencies: %v\n", err)
-		return
+		os.Exit(2)
 	}
 
 	for _, v := range []string{"v1", "v2", "v3", "v4"} {
@@ -127,7 +127,7 @@ func main() {
 		err := cmd.Run()
 		if err != nil {
 			fmt.Printf("building variant %q: %v\n", v, err)
-			return
+			os.Exit(2)
 		}
 	}
 
@@ -139,7 +139,7 @@ func main() {
 	err = cmd.Run()
 	if err != nil {
 		fmt.Printf("building launcher: %v\n", err)
-		return
+		os.Exit(2)
 	}
 }
 
