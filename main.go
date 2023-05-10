@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"io/fs"
 	"os"
@@ -10,7 +11,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/CAFxX/mgo/launcher"
 	"golang.org/x/mod/semver"
 )
 
@@ -81,7 +81,7 @@ func main() {
 	}
 	defer os.RemoveAll(tmpdir)
 
-	err = fs.WalkDir(launcher.Source, ".", func(path string, d fs.DirEntry, err error) error {
+	err = fs.WalkDir(launcherSource, ".", func(path string, d fs.DirEntry, err error) error {
 		var dpath string
 		if a, ok := strings.CutSuffix(path, ".go.mod"); ok {
 			dpath = a + "go.mod"
@@ -94,7 +94,7 @@ func main() {
 		case err != nil:
 			return err
 		case d.Type().IsRegular():
-			buf, err := fs.ReadFile(launcher.Source, path)
+			buf, err := fs.ReadFile(launcherSource, path)
 			if err != nil {
 				return fmt.Errorf("read file %q: %w", path, err)
 			}
@@ -119,7 +119,7 @@ func main() {
 
 	for _, v := range []string{"v1", "v2", "v3", "v4"} {
 		cmd := exec.Command("go")
-		cmd.Args = append([]string{"go", "build", "-o", filepath.Join(tmpdir, "cmd", "mgo."+v)}, args...)
+		cmd.Args = append([]string{"go", "build", "-o", filepath.Join(tmpdir, "launcher", "mgo."+v)}, args...)
 		cmd.Env = append(os.Environ(), "GOAMD64="+v)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
@@ -132,7 +132,7 @@ func main() {
 	}
 
 	cmd = exec.Command("go")
-	cmd.Args = []string{"go", "build", "-C", tmpdir, "-mod", "vendor", "-o", filepath.Join(cwd, o), "-trimpath", "./cmd"}
+	cmd.Args = []string{"go", "build", "-C", tmpdir, "-mod", "vendor", "-o", filepath.Join(cwd, o), "-trimpath", "./launcher"}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -142,3 +142,6 @@ func main() {
 		os.Exit(2)
 	}
 }
+
+//go:embed go.mod go.sum launcher vendor
+var launcherSource embed.FS
