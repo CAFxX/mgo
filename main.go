@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"unicode"
 
 	"golang.org/x/mod/semver"
 )
@@ -64,11 +65,11 @@ func main() {
 	o := filepath.Base(cwd)
 	var args []string
 	for i := 1; i < len(os.Args); i++ {
-		if os.Args[i] == "-o" && len(os.Args) > i+1 {
+		if strings.TrimSpace(os.Args[i]) == "-o" && len(os.Args) > i+1 {
 			o = os.Args[i+1]
 			i++
-		} else if a, ok := strings.CutPrefix(os.Args[i], "-o="); ok {
-			o = a
+		} else if prefix, arg := "-o=", strings.TrimLeftFunc(os.Args[i], unicode.IsSpace); strings.HasPrefix(arg, prefix) {
+			o = arg[len(prefix):]
 		} else {
 			args = append(args, os.Args[i])
 		}
