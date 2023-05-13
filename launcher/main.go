@@ -11,9 +11,10 @@
 package main
 
 import (
-	"embed"
+	_ "embed"
 	"fmt"
 	"os"
+	"reflect"
 	"runtime"
 	"runtime/debug"
 	"syscall"
@@ -23,8 +24,16 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-//go:embed mgo.v1 mgo.v2 mgo.v3 mgo.v4
-var f embed.FS
+var (
+	//go:embed mgo.v1
+	v1 string
+	//go:embed mgo.v2
+	v2 string
+	//go:embed mgo.v3
+	v3 string
+	//go:embed mgo.v4
+	v4 string
+)
 
 func init() {
 	runtime.GOMAXPROCS(1)
@@ -46,20 +55,14 @@ func main() {
 		level = cpuid.CPU.X64Level()
 	}
 
-	v := "mgo.v1"
+	v := v1
 	switch level {
 	case 2:
-		v = "mgo.v2"
+		v = v2
 	case 3:
-		v = "mgo.v3"
+		v = v3
 	case 4:
-		v = "mgo.v4"
-	}
-
-	// FIXME: avoid alloc+copy when reading from embed.FS
-	buf, err := f.ReadFile(v)
-	if err != nil {
-		panicf("reading embedded file %q: %w", v, err)
+		v = v4
 	}
 
 	// TODO: create fd pointing directly to the data embedded?
@@ -68,7 +71,7 @@ func main() {
 		panicf("creating memfd: %w", err)
 	}
 
-	_, err = syscall.Write(fd, buf)
+	_, err = syscall.Write(fd, str2slice(v))
 	if err != nil {
 		panicf("writing to memfd: %w", err)
 	}
@@ -101,6 +104,19 @@ func main() {
 
 	// execveat returns only in case of failure
 	panicf("execveat: %d %w", ret, errno)
+}
+
+func str2slice(s string) (b []byte) {
+	// TODO: when we bump to go1.20 use unsafe.StringData and unsafe.Slice instead.
+	shdr := (*reflect.StringHeader)(unsafe.Pointer(&s))
+	bhdr := (*reflect.SliceHeader)(unsafe.Pointer(&b))
+	*bhdr = reflect.SliceHeader{
+		Data: shdr.Data,
+		Len:  shdr.Len,
+		Cap:  shdr.Len,
+	}
+	runtime.KeepAlive(s)
+	return
 }
 
 func panicf(format string, args ...any) {
