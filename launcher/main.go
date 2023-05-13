@@ -56,16 +56,10 @@ func main() {
 		v = "mgo.v4"
 	}
 
-	embeddedExec(f, v)
-
-	panic("unreachable")
-}
-
-func embeddedExec(f embed.FS, s string) {
 	// FIXME: avoid alloc+copy when reading from embed.FS
-	buf, err := f.ReadFile(s)
+	buf, err := f.ReadFile(v)
 	if err != nil {
-		panicf("reading embedded file: %w", err)
+		panicf("reading embedded file %q: %w", v, err)
 	}
 
 	// TODO: create fd pointing directly to the data embedded?
@@ -79,12 +73,6 @@ func embeddedExec(f embed.FS, s string) {
 		panicf("writing to memfd: %w", err)
 	}
 
-	execveAt(fd)
-
-	panic("unreachable")
-}
-
-func execveAt(fd int) {
 	s, err := syscall.BytePtrFromString("")
 	if err != nil {
 		panicf("converting path: %w", err)
@@ -110,11 +98,9 @@ func execveAt(fd int) {
 	runtime.KeepAlive(s)
 	runtime.KeepAlive(argv)
 	runtime.KeepAlive(envp)
-	if int(ret) == -1 {
-		panicf("execveat: %w", errno)
-	}
 
-	panic("unreachable")
+	// execveat returns only in case of failure
+	panicf("execveat: %d %w", ret, errno)
 }
 
 func panicf(format string, args ...any) {
