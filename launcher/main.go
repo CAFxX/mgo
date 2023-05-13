@@ -3,8 +3,8 @@
 // that is embedded in the binary.
 //
 // This code is not compiled in this directory: instead it is copied (together
-// with the vendor directory) into the temp directory where the compiled
-// GOAMD64 variants are outputted, and it is then compiled from there.
+// with go.mod/go.sum) into the temp directory where the compiled GOAMD64
+// variants are outputted, and it is then compiled from there.
 
 //go:build linux && amd64
 
