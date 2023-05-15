@@ -110,11 +110,9 @@ func str2slice(s string) (b []byte) {
 	// TODO: when we bump to go1.20 use unsafe.StringData and unsafe.Slice instead.
 	shdr := (*reflect.StringHeader)(unsafe.Pointer(&s))
 	bhdr := (*reflect.SliceHeader)(unsafe.Pointer(&b))
-	*bhdr = reflect.SliceHeader{
-		Data: shdr.Data,
-		Len:  shdr.Len,
-		Cap:  shdr.Len,
-	}
+	bhdr.Data = shdr.Data
+	bhdr.Len = shdr.Len
+	bhdr.Cap = shdr.Len
 	runtime.KeepAlive(s)
 	return
 }
