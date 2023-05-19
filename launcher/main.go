@@ -69,8 +69,14 @@ func main() {
 		fmt.Fprintf(os.Stderr, "[mgo] launcher: starting variant GOAMD64=v%d\n", level)
 	}
 
+	exe := os.Args[0]
+	if _exe, _ := os.Executable(); _exe != "" {
+		exe = _exe
+	}
+	exe = fmt.Sprintf("%s [GOAMD64=v%d]", exe, level)
+
 	// TODO: create fd pointing directly to the data embedded?
-	fd, err := unix.MemfdCreate("", unix.MFD_CLOEXEC)
+	fd, err := unix.MemfdCreate(exe, unix.MFD_CLOEXEC)
 	if err != nil {
 		panicf("creating memfd: %w", err)
 	}

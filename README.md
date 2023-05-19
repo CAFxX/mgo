@@ -24,6 +24,24 @@ runtime.
 At runtime it is possible to override which variant is used by specifying in the
 `GOAMD64` environment variable one of the values `v1`, `v2`, `v3`, or `v4`.
 
+To check which version is being executed you can add the `MGODEBUG=log` environment
+variable when starting the compiled binary. In this case the launcher will print on
+stderr a line similar to the following at startup (in this example, to signal that
+the `v3` variant is being used):
+
+```
+[mgo] launcher: starting variant GOAMD64=v3
+```
+
+Otherwise you can find out which version is being used by resolving the `/proc/<PID>/exe`
+symlink, where `<PID>` is the process ID of the launched process:
+
+```
+$ PID=...
+$ readlink /proc/$PID/exe
+/memfd:/usr/bin/foobar [GOAMD64=v3] (deleted)
+```
+
 ## Notes
 
 - `mgo` requires Go >= 1.18 (older versions do not support `GOAMD64`)
