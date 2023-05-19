@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"io/fs"
@@ -13,6 +14,7 @@ import (
 	"unicode"
 
 	"golang.org/x/mod/semver"
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
@@ -114,28 +116,31 @@ func main() {
 		os.Exit(2)
 	}
 
+	eg, ctx := errgroup.WithContext(context.Background())
 	for _, v := range []string{"v1", "v2", "v3", "v4"} {
-		cmd := exec.Command("go")
-		cmd.Args = append([]string{"go", "build", "-o", filepath.Join(tmpdir, "launcher", "mgo."+v)}, args...)
-		cmd.Env = append(os.Environ(), "GOAMD64="+v)
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		err := cmd.Run()
-		if err != nil {
-			fmt.Printf("building variant %q: %v\n", v, err)
-			os.Exit(2)
-		}
+		v := v
+		eg.Go(func() error {
+			cmd := exec.CommandContext(ctx, "go")
+			cmd.Args = append([]string{"go", "build", "-o", filepath.Join(tmpdir, "launcher", "mgo."+v)}, args...)
+			cmd.Env = append(os.Environ(), "GOAMD64="+v)
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				return fmt.Errorf("building variant %q: %w\noutput:\n%s", v, err, output)
+			}
+			return nil
+		})
+	}
+	err = eg.Wait()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(2)
 	}
 
 	cmd = exec.Command("go")
 	cmd.Args = []string{"go", "build", "-C", tmpdir, "-o", o, "-trimpath", "./launcher"}
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf("building launcher: %v\n", err)
+		fmt.Printf("building launcher: %v\noutput:\n%s\n", err, output)
 		os.Exit(2)
 	}
 }
