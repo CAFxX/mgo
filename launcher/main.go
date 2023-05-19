@@ -65,6 +65,10 @@ func main() {
 		v = v4
 	}
 
+	if os.Getenv("MGODEBUG") == "log" {
+		fmt.Fprintf(os.Stderr, "[mgo] launcher: starting variant GOAMD64=v%d\n", level)
+	}
+
 	// TODO: create fd pointing directly to the data embedded?
 	fd, err := unix.MemfdCreate("", unix.MFD_CLOEXEC)
 	if err != nil {
