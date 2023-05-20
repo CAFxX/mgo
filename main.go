@@ -51,7 +51,7 @@ func main() {
 		fmt.Printf("parsing go version: malformed: %q\n", string(buf))
 		os.Exit(2)
 	}
-	if semver.Compare("v"+string(m[1]), "v1.18") < 0 {
+	if semver.Compare("v"+string(m[1]), "v1.20") < 0 {
 		fmt.Printf("installed go version too old: %q\n", string(m[1]))
 		os.Exit(2)
 	}

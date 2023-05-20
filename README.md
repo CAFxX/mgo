@@ -44,7 +44,7 @@ $ readlink /proc/$PID/exe
 
 ## Notes
 
-- `mgo` requires Go >= 1.18 (older versions do not support `GOAMD64`)
+- `mgo` requires Go >= 1.20
 - The resulting executable will be over 4 times as large as a normal build output
 - Startup of the resulting executable is going to be a bit slower (tens of milliseconds)
 - Currently only `GOOS=linux` and `GOARCH=amd64` are supported, and only in
