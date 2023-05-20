@@ -117,9 +117,12 @@ func main() {
 	}
 
 	eg, ctx := errgroup.WithContext(context.Background())
+	sema := make(chan struct{}, runtime.NumCPU())
 	for _, v := range []string{"v1", "v2", "v3", "v4"} {
 		v := v
 		eg.Go(func() error {
+			sema <- struct{}{}
+			defer func() { <-sema }()
 			cmd := exec.CommandContext(ctx, "go")
 			cmd.Args = append([]string{"go", "build", "-o", filepath.Join(tmpdir, "launcher", "mgo."+v)}, args...)
 			cmd.Env = append(os.Environ(), "GOAMD64="+v)
