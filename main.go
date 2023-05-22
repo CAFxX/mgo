@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"embed"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -11,6 +13,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 	"unicode"
 
 	"golang.org/x/mod/semver"
@@ -116,6 +119,9 @@ func main() {
 		os.Exit(2)
 	}
 
+	stdout := &lwriter{Writer: os.Stdout}
+	stderr := &lwriter{Writer: os.Stderr}
+
 	eg, ctx := errgroup.WithContext(context.Background())
 	sema := make(chan struct{}, runtime.NumCPU())
 	for _, v := range []string{"v1", "v2", "v3", "v4"} {
@@ -126,9 +132,11 @@ func main() {
 			cmd := exec.CommandContext(ctx, "go")
 			cmd.Args = append([]string{"go", "build", "-o", filepath.Join(tmpdir, "launcher", "mgo."+v)}, args...)
 			cmd.Env = append(os.Environ(), "GOAMD64="+v)
-			output, err := cmd.CombinedOutput()
+			cmd.Stdout = &writer{prefix: []byte(v + ": "), w: stdout}
+			cmd.Stderr = &writer{prefix: []byte(v + ": "), w: stderr}
+			err := cmd.Run()
 			if err != nil {
-				return fmt.Errorf("building variant %q: %w\noutput:\n%s", v, err, output)
+				return fmt.Errorf("building variant %q: %w", v, err)
 			}
 			return nil
 		})
@@ -141,12 +149,63 @@ func main() {
 
 	cmd = exec.Command("go")
 	cmd.Args = []string{"go", "build", "-C", tmpdir, "-o", o, "-trimpath", "./launcher"}
-	output, err := cmd.CombinedOutput()
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
 	if err != nil {
-		fmt.Printf("building launcher: %v\noutput:\n%s\n", err, output)
+		fmt.Printf("building launcher: %v\n", err)
 		os.Exit(2)
 	}
 }
 
 //go:embed go.mod go.sum launcher
 var launcherSource embed.FS
+
+type writer struct {
+	prefix []byte
+	w      *lwriter
+	buf    bytes.Buffer
+}
+
+func (w *writer) Write(buf []byte) (int, error) {
+	w.w.Lock()
+	defer w.w.Unlock()
+
+	r, _ := w.buf.Write(buf)
+
+	for {
+		line, err := w.buf.ReadBytes('\n')
+		if err != nil {
+			if err == io.EOF {
+				return r, nil
+			}
+			return r, err
+		}
+		_, err = w.write(w.prefix)
+		if err != nil {
+			return r, err
+		}
+		_, err = w.write(line)
+		if err != nil {
+			return r, err
+		}
+	}
+}
+
+func (w *writer) write(buf []byte) (int, error) {
+	var r int
+	for len(buf) > 0 {
+		n, err := w.w.Write(buf)
+		r += n
+		if err != nil {
+			return r, err
+		}
+		buf = buf[n:]
+	}
+	return r, nil
+}
+
+type lwriter struct {
+	sync.Mutex
+	io.Writer
+}
