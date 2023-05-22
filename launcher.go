@@ -6,7 +6,7 @@
 // with go.mod/go.sum) into the temp directory where the compiled GOAMD64
 // variants are outputted, and it is then compiled from there.
 
-//go:build linux && amd64
+//go:build mgo_launcher && linux && amd64
 
 package main
 

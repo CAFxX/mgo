@@ -130,7 +130,7 @@ func main() {
 			sema <- struct{}{}
 			defer func() { <-sema }()
 			cmd := exec.CommandContext(ctx, "go")
-			cmd.Args = append([]string{"go", "build", "-o", filepath.Join(tmpdir, "launcher", "mgo."+v)}, args...)
+			cmd.Args = append([]string{"go", "build", "-o", filepath.Join(tmpdir, "mgo."+v)}, args...)
 			cmd.Env = append(os.Environ(), "GOAMD64="+v)
 			cmd.Stdout = &writer{prefix: []byte(v + ": "), w: stdout}
 			cmd.Stderr = &writer{prefix: []byte(v + ": "), w: stderr}
@@ -148,7 +148,7 @@ func main() {
 	}
 
 	cmd = exec.Command("go")
-	cmd.Args = []string{"go", "build", "-C", tmpdir, "-o", o, "-trimpath", "./launcher"}
+	cmd.Args = []string{"go", "build", "-C", tmpdir, "-o", o, "-trimpath", "-tags", "mgo_launcher"}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
@@ -158,7 +158,7 @@ func main() {
 	}
 }
 
-//go:embed go.mod go.sum launcher
+//go:embed go.mod go.sum launcher.go
 var launcherSource embed.FS
 
 type writer struct {
