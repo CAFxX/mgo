@@ -74,7 +74,7 @@ func main() {
 	}
 	exe = fmt.Sprintf("%s [GOAMD64=v%d]", exe, level)
 
-	// TODO: create fd pointing directly to the data embedded?
+	// TODO: create fd pointing directly to the data embedded in the launcher?
 	fd, err := unix.MemfdCreate(exe, unix.MFD_CLOEXEC)
 	if err != nil {
 		panicf("creating memfd: %w", err)
@@ -84,6 +84,8 @@ func main() {
 	if err != nil {
 		panicf("writing to memfd: %w", err)
 	}
+
+	// TODO: seal the memfd?
 
 	s, err := syscall.BytePtrFromString("")
 	if err != nil {
