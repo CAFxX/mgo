@@ -14,7 +14,6 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
-	"reflect"
 	"runtime"
 	"runtime/debug"
 	"syscall"
@@ -81,7 +80,7 @@ func main() {
 		panicf("creating memfd: %w", err)
 	}
 
-	_, err = syscall.Write(fd, str2slice(v))
+	_, err = syscall.Write(fd, unsafe.Slice(unsafe.StringData(v), len(v)))
 	if err != nil {
 		panicf("writing to memfd: %w", err)
 	}
@@ -114,17 +113,6 @@ func main() {
 
 	// execveat returns only in case of failure
 	panicf("execveat: %d %w", ret, errno)
-}
-
-func str2slice(s string) (b []byte) {
-	// TODO: when we bump to go1.20 use unsafe.StringData and unsafe.Slice instead.
-	shdr := (*reflect.StringHeader)(unsafe.Pointer(&s))
-	bhdr := (*reflect.SliceHeader)(unsafe.Pointer(&b))
-	bhdr.Data = shdr.Data
-	bhdr.Len = shdr.Len
-	bhdr.Cap = shdr.Len
-	runtime.KeepAlive(s)
-	return
 }
 
 func panicf(format string, args ...any) {

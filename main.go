@@ -1,3 +1,5 @@
+//go:build !mgo_launcher
+
 package main
 
 import (
