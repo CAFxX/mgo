@@ -19,7 +19,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	cpuid "github.com/klauspost/cpuid/v2"
+	"github.com/klauspost/cpuid/v2"
 	"golang.org/x/sys/unix"
 )
 
