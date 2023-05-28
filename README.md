@@ -50,6 +50,12 @@ $ readlink /proc/$PID/exe
 - Currently only `GOOS=linux` and `GOARCH=amd64` are supported, and only in
   `buildmode`s that produce executables (not archives, plugins, or libraries)
 
+## TODO
+
+- Further minimize launcher overhead
+- Embed build metadata of the built `v1` variant into the launcher, so that introspection
+  tools can use it
+
 ## Quick sanity check
 
 ```
