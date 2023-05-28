@@ -80,9 +80,11 @@ func main() {
 		panicf("creating memfd: %w", err)
 	}
 
-	_, err = syscall.Write(fd, unsafe.Slice(unsafe.StringData(v), len(v)))
+	written, err := syscall.Write(fd, unsafe.Slice(unsafe.StringData(v), len(v)))
 	if err != nil {
 		panicf("writing to memfd: %w", err)
+	} else if written != len(v) {
+		panic("short write to memfd")
 	}
 
 	// TODO: seal the memfd?
