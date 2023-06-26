@@ -123,6 +123,8 @@ func main() {
 
 	stdout := &lwriter{Writer: os.Stdout}
 	stderr := &lwriter{Writer: os.Stderr}
+	env := os.Environ()
+	env = env[:len(env):len(env)] // ensure concurrent appends don't use the same backing array
 
 	eg, ctx := errgroup.WithContext(context.Background())
 	sema := make(chan struct{}, runtime.NumCPU())
@@ -133,7 +135,7 @@ func main() {
 			defer func() { <-sema }()
 			cmd := exec.CommandContext(ctx, "go")
 			cmd.Args = append([]string{"go", "build", "-o", filepath.Join(tmpdir, "mgo."+v)}, args...)
-			cmd.Env = append(os.Environ(), "GOAMD64="+v)
+			cmd.Env = append(env, "GOAMD64="+v)
 			cmd.Stdout = &writer{prefix: []byte(v + ": "), w: stdout}
 			cmd.Stderr = &writer{prefix: []byte(v + ": "), w: stderr}
 			err := cmd.Run()
