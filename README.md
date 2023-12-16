@@ -70,4 +70,4 @@ This command should succeed and produce three identical hashes.
 
 
 
-[1]: https://github.com/golang/go/wiki/MinimumRequirements#amd64
+[1]: https://go.dev/wiki/MinimumRequirements#amd64
