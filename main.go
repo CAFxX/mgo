@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"unicode"
@@ -124,8 +125,13 @@ func main() {
 	stdout := &lwriter{Writer: os.Stdout}
 	stderr := &lwriter{Writer: os.Stderr}
 
+	np := runtime.NumCPU()
+	if pbi, _ := strconv.Atoi(os.Getenv("MGO_PARALLEL_BUILD")); pbi > 0 {
+		np = pbi
+	}
+	sema := make(chan struct{}, np)
+
 	eg, ctx := errgroup.WithContext(context.Background())
-	sema := make(chan struct{}, runtime.NumCPU())
 	for _, v := range []string{"v1", "v2", "v3", "v4"} {
 		v := v
 		eg.Go(func() error {
