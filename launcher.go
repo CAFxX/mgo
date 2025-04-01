@@ -4,7 +4,7 @@
 //
 // This code is not compiled in this directory: instead it is copied (together
 // with go.mod/go.sum) into the temp directory where the compiled GOAMD64
-// variants are outputted, and it is then compiled from there.
+// variants are output, and it is then compiled from there.
 
 //go:build mgo_launcher && linux && amd64
 
@@ -75,10 +75,12 @@ func main() {
 	exe = fmt.Sprintf("%s [GOAMD64=v%d]", exe, level)
 
 	// TODO: create fd pointing directly to the data embedded in the launcher?
+	// TODO: handle via O_TMPFILE the case in which the executable does not fit into a memfd
 	fd, err := unix.MemfdCreate(exe, unix.MFD_CLOEXEC)
 	if err != nil {
 		panicf("creating memfd: %w", err)
 	}
+	defer unix.Close(fd)
 
 	written, err := syscall.Write(fd, unsafe.Slice(unsafe.StringData(v), len(v)))
 	if err != nil {
@@ -93,14 +95,17 @@ func main() {
 	if err != nil {
 		panicf("converting path: %w", err)
 	}
+	defer runtime.KeepAlive(s)
 	argv, err := syscall.SlicePtrFromStrings(os.Args)
 	if err != nil {
 		panicf("converting args: %w", err)
 	}
+	defer runtime.KeepAlive(argv)
 	envp, err := syscall.SlicePtrFromStrings(os.Environ())
 	if err != nil {
 		panicf("converting environ: %w", err)
 	}
+	defer runtime.KeepAlive(envp)
 
 	ret, _, errno := syscall.Syscall6(
 		unix.SYS_EXECVEAT,
@@ -111,9 +116,6 @@ func main() {
 		unix.AT_EMPTY_PATH,
 		0, /* unused */
 	)
-	runtime.KeepAlive(s)
-	runtime.KeepAlive(argv)
-	runtime.KeepAlive(envp)
 
 	// execveat returns only in case of failure
 	panicf("execveat: %d %w", ret, errno)
