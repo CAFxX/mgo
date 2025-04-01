@@ -55,6 +55,7 @@ $ readlink /proc/$PID/exe
 - Further minimize launcher overhead
 - Embed build metadata of the built `v1` variant into the launcher, so that introspection
   tools can use it
+- Support `GOARCH=arm` and `GOARCH=arm64`
 
 ## Quick sanity check
 
