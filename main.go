@@ -133,7 +133,6 @@ func main() {
 
 	eg, ctx := errgroup.WithContext(context.Background())
 	for _, v := range []string{"v1", "v2", "v3", "v4"} {
-		v := v
 		eg.Go(func() error {
 			sema <- struct{}{}
 			defer func() { <-sema }()
