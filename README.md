@@ -42,6 +42,10 @@ $ readlink /proc/$PID/exe
 /memfd:/usr/bin/foobar [GOAMD64=v3] (deleted)
 ```
 
+You can extract a specific embedded executable using `MGODEBUG=extract` when starting the
+compiled binary, e.g. `MGODEBUG=extract GOAMD64=v3` will dump to stdout the executable for
+`GOAMD64=v3` instead of starting it.
+
 ## Notes
 
 - `mgo` requires Go >= 1.20

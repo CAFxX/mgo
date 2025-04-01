@@ -64,7 +64,11 @@ func main() {
 		v = v4
 	}
 
-	if os.Getenv("MGODEBUG") == "log" {
+	switch os.Getenv("MGODEBUG") {
+	case "extract":
+		os.Stdout.WriteString(v)
+		os.Exit(0)
+	case "log":
 		fmt.Fprintf(os.Stderr, "[mgo] launcher: starting variant GOAMD64=v%d\n", level)
 	}
 
