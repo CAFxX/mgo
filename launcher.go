@@ -6,12 +6,11 @@
 // with go.mod/go.sum) into the temp directory where the compiled GOAMD64
 // variants are output, and it is then compiled from there.
 
-//go:build mgo_launcher && linux && amd64
+//go:build mgo_launcher && linux && (amd64 || arm64)
 
 package main
 
 import (
-	_ "embed"
 	"fmt"
 	"os"
 	"runtime"
@@ -19,19 +18,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/klauspost/cpuid/v2"
 	"golang.org/x/sys/unix"
-)
-
-var (
-	//go:embed mgo.v1
-	v1 string
-	//go:embed mgo.v2
-	v2 string
-	//go:embed mgo.v3
-	v3 string
-	//go:embed mgo.v4
-	v4 string
 )
 
 func init() {
@@ -40,43 +27,22 @@ func init() {
 }
 
 func main() {
-	var level int
-	switch os.Getenv("GOAMD64") {
-	case "v1":
-		level = 1
-	case "v2":
-		level = 2
-	case "v3":
-		level = 3
-	case "v4":
-		level = 4
-	default:
-		level = cpuid.CPU.X64Level()
-	}
-
-	v := v1
-	switch level {
-	case 2:
-		v = v2
-	case 3:
-		v = v3
-	case 4:
-		v = v4
-	}
+	envVar, variant, binary := getVariant()
 
 	switch os.Getenv("MGODEBUG") {
 	case "extract":
-		os.Stdout.WriteString(v)
+		fmt.Fprintf(os.Stderr, "[mgo] launcher: dumping variant %s=%s\n", envVar, variant)
+		os.Stdout.WriteString(binary)
 		os.Exit(0)
 	case "log":
-		fmt.Fprintf(os.Stderr, "[mgo] launcher: starting variant GOAMD64=v%d\n", level)
+		fmt.Fprintf(os.Stderr, "[mgo] launcher: starting variant %s=%s\n", envVar, variant)
 	}
 
 	exe := os.Args[0]
 	if _exe, _ := os.Executable(); _exe != "" {
 		exe = _exe
 	}
-	exe = fmt.Sprintf("%s [GOAMD64=v%d]", exe, level)
+	exe = fmt.Sprintf("%s [%s=%s]", exe, envVar, variant)
 
 	// TODO: create fd pointing directly to the data embedded in the launcher?
 	// TODO: handle via O_TMPFILE the case in which the executable does not fit into a memfd
@@ -86,7 +52,7 @@ func main() {
 	}
 	defer unix.Close(fd)
 
-	written, err := syscall.Write(fd, unsafe.Slice(unsafe.StringData(v), len(v)))
+	written, err := syscall.Write(fd, unsafe.Slice(unsafe.StringData(binary), len(binary)))
 	if err != nil {
 		panicf("writing to memfd: %w", err)
 	} else if written != len(v) {

@@ -59,7 +59,10 @@ compiled binary, e.g. `MGODEBUG=extract GOAMD64=v3` will dump to stdout the exec
 - Further minimize launcher overhead
 - Embed build metadata of the built `v1` variant into the launcher, so that introspection
   tools can use it
-- Support `GOARCH=arm` and [`GOARCH=arm64`](https://github.com/golang/go/issues/60905)
+- Support `GOARCH=386`, `GOARCH=arm`, and [`GOARCH=arm64`](https://github.com/golang/go/issues/60905)
+- Optionally support (fast) zstd/patch-from compression to reduce disk space at the expense
+  of slower process startup
+- Support specifying an explicit list of variants to be included
 
 ## Quick sanity check
 

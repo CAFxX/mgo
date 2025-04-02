@@ -37,13 +37,16 @@ func main() {
 	if goarch == "" {
 		goarch = runtime.GOARCH
 	}
-	if goarch != "amd64" {
+	if goarch != "amd64" && goarch != "arm64" {
 		fmt.Printf("GOARCH=%q is not supported\n", goarch)
 		os.Exit(1)
 	}
 
-	if goamd64 := os.Getenv("GOAMD64"); goamd64 != "" {
+	if goamd64 := os.Getenv("GOAMD64"); goarch == "amd64" && goamd64 != "" {
 		fmt.Printf("GOAMD64 must not be set (currently %q)\n", goamd64)
+		os.Exit(1)
+	} else if goarm64 := os.Getenv("GOARM64"); goarch == "arm64" && goarm64 != "" {
+		fmt.Printf("GOARM64 must not be set (currently %q)\n", goarm64)
 		os.Exit(1)
 	}
 
@@ -131,14 +134,24 @@ func main() {
 	}
 	sema := make(chan struct{}, np)
 
+	variantEnvVar := "GOAMD64"
+	variants := []string{"v1", "v2", "v3", "v4"}
+	if goarch == "arm64" {
+		variantEnvVar = "GOARM64"
+		variants = []string{"v8.0", "v8.0,lse", "v8.1", "v8.2", "v8.3", "v8.4", "v8.5", "v8.6", "v8.7", "v8.8", "v8.9", "v9.0", "v9.1", "v9.2", "v9.3", "v9.4", "v9.5"}
+		for _, v := range variants {
+			variants = append(variants, v+",crypto")
+		}
+	}
+
 	eg, ctx := errgroup.WithContext(context.Background())
-	for _, v := range []string{"v1", "v2", "v3", "v4"} {
+	for _, v := range variants {
 		eg.Go(func() error {
 			sema <- struct{}{}
 			defer func() { <-sema }()
 			cmd := exec.CommandContext(ctx, "go")
 			cmd.Args = append([]string{"go", "build", "-o", filepath.Join(tmpdir, "mgo."+v)}, args...)
-			cmd.Env = append(os.Environ(), "GOAMD64="+v)
+			cmd.Env = append(os.Environ(), variantEnvVar+"="+v)
 			cmd.Stdout = &writer{prefix: []byte(v + ": "), w: stdout}
 			cmd.Stderr = &writer{prefix: []byte(v + ": "), w: stderr}
 			err := cmd.Run()
