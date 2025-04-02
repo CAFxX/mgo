@@ -24,6 +24,8 @@ import (
 )
 
 func main() {
+	// TODO: print errors on stderr
+
 	goos := os.Getenv("GOOS")
 	if goos == "" {
 		goos = runtime.GOOS
@@ -136,12 +138,14 @@ func main() {
 
 	variantEnvVar := "GOAMD64"
 	variants := []string{"v1", "v2", "v3", "v4"}
+	baseVariant := "v1"
 	if goarch == "arm64" {
 		variantEnvVar = "GOARM64"
 		variants = []string{"v8.0", "v8.0,lse", "v8.1", "v8.2", "v8.3", "v8.4", "v8.5", "v8.6", "v8.7", "v8.8", "v8.9", "v9.0", "v9.1", "v9.2", "v9.3", "v9.4", "v9.5"}
 		for _, v := range variants {
 			variants = append(variants, v+",crypto")
 		}
+		baseVariant = "v8.0"
 	}
 
 	eg, ctx := errgroup.WithContext(context.Background())
@@ -169,6 +173,7 @@ func main() {
 
 	cmd = exec.Command("go")
 	cmd.Args = []string{"go", "build", "-C", tmpdir, "-o", o, "-trimpath", "-tags", "mgo_launcher"}
+	cmd.Env = append(os.Environ(), variantEnvVar+"="+baseVariant)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
@@ -178,7 +183,7 @@ func main() {
 	}
 }
 
-//go:embed go.mod go.sum launcher.go
+//go:embed go.mod go.sum launcher.go launcher_*.go
 var launcherSource embed.FS
 
 type writer struct {

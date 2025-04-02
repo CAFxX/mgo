@@ -69,9 +69,9 @@ compiled binary, e.g. `MGODEBUG=extract GOAMD64=v3` will dump to stdout the exec
 ```
 rm -f mgo* && \
 echo stage0 && go build && \
-echo stage1 && ./mgo -o mgo1 && sha1sum mgo1 && \
-echo stage2 && ./mgo1 -o mgo2 && sha1sum mgo2 && \
-echo stage3 && ./mgo2 -o mgo3 && sha1sum mgo3
+echo -n "stage1 -> " && ./mgo -o mgo1 && sha1sum mgo1 && \
+echo -n "stage2 -> " && ./mgo1 -o mgo2 && sha1sum mgo2 && \
+echo -n "stage3 -> " && ./mgo2 -o mgo3 && sha1sum mgo3
 ```
 
 This command should succeed and produce three identical hashes.

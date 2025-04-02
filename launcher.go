@@ -55,7 +55,7 @@ func main() {
 	written, err := syscall.Write(fd, unsafe.Slice(unsafe.StringData(binary), len(binary)))
 	if err != nil {
 		panicf("writing to memfd: %w", err)
-	} else if written != len(v) {
+	} else if written != len(binary) {
 		panic("short write to memfd")
 	}
 
