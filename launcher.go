@@ -80,7 +80,7 @@ func main() {
 
 	// TODO: create fd pointing directly to the data embedded in the launcher?
 	// TODO: handle via O_TMPFILE the case in which the executable does not fit into a memfd
-	fd, err := unix.MemfdCreate(exe, unix.MFD_CLOEXEC)
+	fd, err := unix.MemfdCreate(exe, unix.MFD_CLOEXEC|unix.MFD_ALLOW_SEALING)
 	if err != nil {
 		panicf("creating memfd: %w", err)
 	}
@@ -93,7 +93,14 @@ func main() {
 		panic("short write to memfd")
 	}
 
-	// TODO: seal the memfd?
+	_, err = unix.FcntlInt(
+		uintptr(fd),
+		unix.F_ADD_SEALS,
+		unix.F_SEAL_GROW|unix.F_SEAL_SHRINK|unix.F_SEAL_WRITE,
+	)
+	if err != nil {
+		panicf("sealing memfd: %w", err)
+	}
 
 	s, err := syscall.BytePtrFromString("")
 	if err != nil {
