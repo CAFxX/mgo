@@ -57,6 +57,8 @@ compiled binary, e.g. `MGODEBUG=extract GOAMD64=v3` will dump to stdout the exec
 ## TODO
 
 - Further minimize launcher overhead
+  - Start process with `GOMAXPROCS=1` and `GOGC=off` instead of setting them in `init`
+  - Avoid the `write` to the memfd (find ways to populate the new process directly from the binary in `RODATA`)
 - Embed build metadata of the built `v1` variant into the launcher, so that introspection
   tools can use it
 - Support `GOARCH=arm` and [`GOARCH=arm64`](https://github.com/golang/go/issues/60905)
