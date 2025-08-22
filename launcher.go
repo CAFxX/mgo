@@ -11,6 +11,7 @@
 package main
 
 import (
+	"bytes"
 	"compress/gzip"
 	_ "embed"
 	"fmt"
@@ -22,8 +23,10 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/klauspost/cpuid/v2"
 	"golang.org/x/sys/unix"
+
+	"github.com/klauspost/compress/zstd"
+	"github.com/klauspost/cpuid/v2"
 )
 
 var (
@@ -70,12 +73,21 @@ func main() {
 	var r io.Reader
 	r = strings.NewReader(v)
 
-	if mgoGzip { // defined in launcher_config.go (generated in main.go)
-		var err error
+	var err error
+	switch mgoCompress {
+	case 0:
+		// no compression
+	case 1:
 		r, err = gzip.NewReader(r)
-		if err != nil {
-			panicf("gzip decompression failed: %w", err)
-		}
+	case 2:
+		r, err = zstd.NewReader(r)
+	case 3:
+		r, err = zstd.NewReader(r, zstd.WithDecoderDictRaw(0, decodeBase()), zstd.WithDecoderMaxWindow(zstd.MaxWindowSize))
+	default:
+		panicf("invalid mgoCompress: %d", mgoCompress)
+	}
+	if mgoCompress != 0 && err != nil {
+		panicf("decompression failed: %w", err)
 	}
 
 	switch os.Getenv("MGODEBUG") {
@@ -143,4 +155,22 @@ func main() {
 
 func panicf(format string, args ...any) {
 	panic(fmt.Errorf(format, args...))
+}
+
+func decodeBase() []byte {
+	if mgoCompress != 3 {
+		panicf("illegal mgoCompress: %d", mgoCompress)
+	}
+
+	var buf bytes.Buffer
+	r, err := zstd.NewReader(strings.NewReader(v1))
+	if err != nil {
+		panicf("error start decompressing base: %w", err)
+	}
+	_, err = io.Copy(&buf, r)
+	if err != nil {
+		panicf("error decompressing base: %w", err)
+	}
+
+	return buf.Bytes()
 }
