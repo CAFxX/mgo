@@ -11,11 +11,14 @@
 package main
 
 import (
+	"compress/gzip"
 	_ "embed"
 	"fmt"
+	"io"
 	"os"
 	"runtime"
 	"runtime/debug"
+	"strings"
 	"syscall"
 	"unsafe"
 
@@ -64,9 +67,23 @@ func main() {
 		v = v4
 	}
 
+	var r io.Reader
+	r = strings.NewReader(v)
+
+	if mgoGzip { // defined in launcher_config.go (generated in main.go)
+		var err error
+		r, err = gzip.NewReader(r)
+		if err != nil {
+			panicf("gzip decompression failed: %w", err)
+		}
+	}
+
 	switch os.Getenv("MGODEBUG") {
 	case "extract":
-		os.Stdout.WriteString(v)
+		_, err := io.Copy(os.Stdout, r)
+		if err != nil {
+			panicf("extraction failed: %w", err)
+		}
 		os.Exit(0)
 	case "log":
 		fmt.Fprintf(os.Stderr, "[mgo] launcher: starting variant GOAMD64=v%d\n", level)
@@ -84,13 +101,12 @@ func main() {
 	if err != nil {
 		panicf("creating memfd: %w", err)
 	}
-	defer unix.Close(fd)
+	memfd := os.NewFile(uintptr(fd), exe)
+	defer memfd.Close()
 
-	written, err := syscall.Write(fd, unsafe.Slice(unsafe.StringData(v), len(v)))
+	_, err = io.Copy(memfd, r)
 	if err != nil {
 		panicf("writing to memfd: %w", err)
-	} else if written != len(v) {
-		panic("short write to memfd")
 	}
 
 	// TODO: seal the memfd?

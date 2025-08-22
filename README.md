@@ -16,10 +16,18 @@ go install github.com/CAFxX/mgo@latest
 
 ## Usage
 
+### Build time
+
 When building your code just replace `go build [...]` with `mgo [...]`: the resulting
 executable will contain 4 variants, each optimized for one of `GOAMD64=v1`, `GOAMD64=v2`,
 `GOAMD64=v3` and `GOAMD64=v4`, and a launcher that will pick the appropriate one at
 runtime.
+
+Using `MGO_GZIP=n`, with `n` from `1` to `9`, will transparently use gzip to compress and
+decompress the variants embedded in the executable. This reduces the size the size of the
+executable, at the cost of additional overhead when the executable is launched.
+
+### Run time
 
 At runtime it is possible to override which variant is used by specifying in the
 `GOAMD64` environment variable one of the values `v1`, `v2`, `v3`, or `v4`.
