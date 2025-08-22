@@ -155,7 +155,14 @@ func main() {
 	}
 
 	cmd = exec.Command("go")
-	cmd.Args = []string{"go", "build", "-C", tmpdir, "-o", o, "-trimpath", "-tags", "mgo_launcher"}
+	cmd.Args = []string{
+		"go", "build", 
+		"-C", tmpdir, 
+		"-o", o, 
+		"-trimpath", 
+		"-ldflags", "-s -w", 
+		"-tags", "mgo_launcher",
+	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
