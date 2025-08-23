@@ -12,7 +12,6 @@ package main
 
 import (
 	"bytes"
-	"compress/gzip"
 	_ "embed"
 	"fmt"
 	"io"
@@ -25,6 +24,7 @@ import (
 
 	"golang.org/x/sys/unix"
 
+	"github.com/klauspost/compress/gzip"
 	"github.com/klauspost/compress/zstd"
 	"github.com/klauspost/cpuid/v2"
 )
@@ -70,23 +70,22 @@ func main() {
 		v = v4
 	}
 
-	var r io.Reader
-	r = strings.NewReader(v)
+	var r io.Reader = strings.NewReader(v)
 
 	var err error
 	switch mgoCompress {
-	case 0:
+	case compressionTypeNone:
 		// no compression
-	case 1:
+	case compressionTypeGzip:
 		r, err = gzip.NewReader(r)
-	case 2:
+	case compressionTypeZstd:
 		r, err = zstd.NewReader(r)
-	case 3:
+	case compressionTypeZstdWithDict:
 		r, err = zstd.NewReader(r, zstd.WithDecoderDictRaw(0, decodeBase()), zstd.WithDecoderMaxWindow(zstd.MaxWindowSize))
 	default:
 		panicf("invalid mgoCompress: %d", mgoCompress)
 	}
-	if mgoCompress != 0 && err != nil {
+	if mgoCompress != compressionTypeNone && err != nil {
 		panicf("decompression failed: %w", err)
 	}
 
@@ -158,7 +157,7 @@ func panicf(format string, args ...any) {
 }
 
 func decodeBase() []byte {
-	if mgoCompress != 3 {
+	if mgoCompress != compressionTypeZstdWithDict {
 		panicf("illegal mgoCompress: %d", mgoCompress)
 	}
 

@@ -23,9 +23,15 @@ executable will contain 4 variants, each optimized for one of `GOAMD64=v1`, `GOA
 `GOAMD64=v3` and `GOAMD64=v4`, and a launcher that will pick the appropriate one at
 runtime.
 
-Using `MGO_GZIP=n`, with `n` from `1` to `9`, will transparently use gzip to compress and
-decompress the variants embedded in the executable. This reduces the size the size of the
-executable, at the cost of additional overhead when the executable is launched.
+Using `MGO_COMPRESS`, will enable the transparent use of compression of the variants
+embedded in the executable. This reduces the size the size of the executable, at the
+cost of additional overhead when the executable is launched. The following values are
+supported:
+
+- `g$n` with `$n` a number from 1 to 9 will use Gzip with compression level `$n`
+- `z$n` with `$n` a number from 1 to 11 will use Zstandard with compression level `$n`
+- `Z$n` with `$n` a number from 1 to 11 will use Zstandard with compression level `$n`
+  and dictionary compression using the base variant as the dictionary
 
 ### Run time
 
@@ -73,15 +79,26 @@ compiled binary, e.g. `MGODEBUG=extract GOAMD64=v3` will dump to stdout the exec
 
 ## Quick sanity check
 
-```
-rm -f mgo* && \
+```bash
 echo stage0 && go build && \
-echo stage1 && ./mgo -o mgo1 && sha1sum mgo1 && \
-echo stage2 && ./mgo1 -o mgo2 && sha1sum mgo2 && \
-echo stage3 && ./mgo2 -o mgo3 && sha1sum mgo3
+for mgo_compress in "" g1 g9 z1 z11 Z1 Z11; do
+  (
+    echo -e "\033[A\r\033[KMGO_COMPRESS=$mgo_compress"
+    export MGO_COMPRESS=$mgo_compress
+    rm -f mgo? && \
+    echo stage1 && ./mgo -o mgo1 && h1=$(sha1sum mgo1 | cut -c-40) && \
+    echo -e "\033[A\r\033[Kstage2" && ./mgo1 -o mgo2 && h2=$(sha1sum mgo2 | cut -c-40) && \
+    echo -e "\033[A\r\033[Kstage3" && ./mgo2 -o mgo3 && h3=$(sha1sum mgo3 | cut -c-40) && \
+    if [ "$h1" != "$h2" ] || [ "$h3" != "$h3" ]; then
+      echo -e "\033[A\r\033[KHashes are not identical: $h1, $h2, $h3\n"
+    fi || \
+    echo "Build failed\n" && exit 1
+  )
+done
+echo -e "\033[A\r\033[K"
 ```
 
-This command should succeed and produce three identical hashes.
+If no failures are reported, everything should be working correctly.
 
 
 
